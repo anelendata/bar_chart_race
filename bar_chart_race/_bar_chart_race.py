@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from matplotlib import ticker
 from ._func_animation import FuncAnimation
 from matplotlib.colors import Colormap
+from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 
 from ._common_chart import CommonChart
 from ._utils import prepare_wide_data
@@ -347,6 +348,13 @@ class _BarChartRace(CommonChart):
             axis = ax.xaxis if self.orientation == 'h' else ax.yaxis
             axis.set_major_formatter(self.tick_template)
 
+    def prepare_images(self):
+        _, _, labels, _ = self.get_bar_info(0)
+        self.images = {}
+        for label in labels:
+            image_file = self.image_files[label]
+            self.images[label] = plt.imread(image_file)
+
     def plot_bars(self, ax, i):
         bar_location, bar_length, cols, colors = self.get_bar_info(i)
         if self.orientation == 'h':
@@ -354,11 +362,16 @@ class _BarChartRace(CommonChart):
                     color=colors, **self.bar_kwargs)
 
         if self.image_files:
-            for x, y, label in enumerate(zip(bar_length, bar_location, tick_label)):
-                image_file = self.image_files[label]
-                img = plt.imread(image_file)
-                height = 0.9
-                plt.imshow(img, extent=[x - 8, x - 2, y - height / 2, y + height / 2], aspect='auto', zorder=2)
+            for i, (x, y, label) in enumerate(zip(bar_length, bar_location, list(cols))):
+                size = self.images[label].shape
+                zoom = 0.25 * self.bar_size * (self.fig.dpi * self.fig.get_figheight()) / self.n_bars / size[1]
+                im = OffsetImage(self.images[label], zoom=zoom)
+                x_offset = -25
+                if self.annotation_box.get(label):
+                    self.annotation_box[label].remove()
+                self.annotation_box[label] = AnnotationBbox(im, (x, y), xybox=(x_offset, 0), frameon=False,
+                        xycoords='data', boxcoords="offset points", pad=0)
+                ax.add_artist(self.annotation_box[label])
 
             ax.set_yticklabels(ax.get_yticklabels(), **self.tick_label_font)
             if not self.fixed_max and self.bar_textposition == 'outside':
@@ -490,6 +503,12 @@ class _BarChartRace(CommonChart):
             return frames
 
         frames = frame_generator(len(self.df_values))
+
+        # Initialize image properties
+        if self.image_files:
+            self.prepare_images()
+        self.annotation_box = {}
+
         anim = FuncAnimation(self.fig, self.anim_func, frames, init_func, interval=interval)
 
         try:
