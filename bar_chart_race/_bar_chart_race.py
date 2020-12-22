@@ -17,7 +17,7 @@ class _BarChartRace(CommonChart):
                  period_label, period_template, period_summary_func, perpendicular_bar_func,
                  colors, title, bar_size, bar_textposition, bar_texttemplate, bar_label_font,
                  tick_label_font, tick_template, shared_fontdict, scale, fig, writer,
-                 bar_kwargs, fig_kwargs, filter_column_colors):
+                 bar_kwargs, fig_kwargs, filter_column_colors, image_files):
         self.filename = filename
         self.extension = self.get_extension()
         self.orientation = orientation
@@ -57,6 +57,8 @@ class _BarChartRace(CommonChart):
         self.fig_kwargs = self.get_fig_kwargs(fig_kwargs)
         self.subplots_adjust = self.get_subplots_adjust()
         self.fig = self.get_fig(fig)
+
+        self.image_files = image_files
 
     def validate_params(self):
         if isinstance(self.filename, str):
@@ -350,6 +352,14 @@ class _BarChartRace(CommonChart):
         if self.orientation == 'h':
             ax.barh(bar_location, bar_length, tick_label=cols,
                     color=colors, **self.bar_kwargs)
+
+        if self.image_files:
+            for x, y, label in enumerate(zip(bar_length, bar_location, tick_label)):
+                image_file = self.image_files[label]
+                img = plt.imread(image_file)
+                height = 0.9
+                plt.imshow(img, extent=[x - 8, x - 2, y - height / 2, y + height / 2], aspect='auto', zorder=2)
+
             ax.set_yticklabels(ax.get_yticklabels(), **self.tick_label_font)
             if not self.fixed_max and self.bar_textposition == 'outside':
                 max_bar = bar_length.max()
@@ -517,7 +527,8 @@ def bar_chart_race(df, filename=None, orientation='h', sort='desc', n_bars=None,
                    bar_textposition='outside', bar_texttemplate='{x:,.0f}',
                    bar_label_font=None, tick_label_font=None, tick_template='{x:,.0f}',
                    shared_fontdict=None, scale='linear', fig=None, writer=None,
-                   bar_kwargs=None,  fig_kwargs=None, filter_column_colors=False):
+                   bar_kwargs=None,  fig_kwargs=None, filter_column_colors=False,
+                   image_files=None):
     '''
     Create an animated bar chart race using matplotlib. Data must be in
     'wide' format where each row represents a single time period and each
@@ -816,6 +827,9 @@ def bar_chart_race(df, filename=None, orientation='h', sort='desc', n_bars=None,
         This parameter is experimental and may be changed/removed
         in a later version.
 
+    image_files: [str], default `None`
+        Render images with the bars.
+
     Returns
     -------
     When `filename` is left as `None`, an HTML5 video is returned as a string.
@@ -859,7 +873,8 @@ def bar_chart_race(df, filename=None, orientation='h', sort='desc', n_bars=None,
         writer=None,
         bar_kwargs={'alpha': .7},
         fig_kwargs={'figsize': (6, 3.5), 'dpi': 144},
-        filter_column_colors=False)
+        filter_column_colors=False,
+        image_files=None)
 
     Font Help
     ---------
@@ -872,7 +887,8 @@ def bar_chart_race(df, filename=None, orientation='h', sort='desc', n_bars=None,
                         period_label, period_template, period_summary_func, perpendicular_bar_func,
                         colors, title, bar_size, bar_textposition, bar_texttemplate,
                         bar_label_font, tick_label_font, tick_template, shared_fontdict, scale,
-                        fig, writer, bar_kwargs, fig_kwargs, filter_column_colors)
+                        fig, writer, bar_kwargs, fig_kwargs, filter_column_colors,
+                        image_file)
     return bcr.make_animation()
 
 
@@ -884,7 +900,8 @@ def get_bcr(df, filename=None, orientation='h', sort='desc', n_bars=None,
                    bar_textposition='outside', bar_texttemplate='{x:,.0f}',
                    bar_label_font=None, tick_label_font=None, tick_template='{x:,.0f}',
                    shared_fontdict=None, scale='linear', fig=None, writer=None,
-                   bar_kwargs=None,  fig_kwargs=None, filter_column_colors=False):
+                   bar_kwargs=None,  fig_kwargs=None, filter_column_colors=False,
+                   image_files=None):
     """
     Get class object
     """
@@ -893,5 +910,5 @@ def get_bcr(df, filename=None, orientation='h', sort='desc', n_bars=None,
                         period_label, period_template, period_summary_func, perpendicular_bar_func,
                         colors, title, bar_size, bar_textposition, bar_texttemplate,
                         bar_label_font, tick_label_font, tick_template, shared_fontdict, scale,
-                        fig, writer, bar_kwargs, fig_kwargs, filter_column_colors)
+                        fig, writer, bar_kwargs, fig_kwargs, filter_column_colors, image_files)
     return bcr
