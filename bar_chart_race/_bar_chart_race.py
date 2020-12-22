@@ -11,12 +11,12 @@ from ._common_chart import CommonChart
 from ._utils import prepare_wide_data
 
 class _BarChartRace(CommonChart):
-    
+
     def __init__(self, df, filename, orientation, sort, n_bars, fixed_order, fixed_max,
-                 steps_per_period, period_length, end_period_pause, interpolate_period, 
-                 period_label, period_template, period_summary_func, perpendicular_bar_func, 
-                 colors, title, bar_size, bar_textposition, bar_texttemplate, bar_label_font, 
-                 tick_label_font, tick_template, shared_fontdict, scale, fig, writer, 
+                 steps_per_period, period_length, end_period_pause, interpolate_period,
+                 period_label, period_template, period_summary_func, perpendicular_bar_func,
+                 colors, title, bar_size, bar_textposition, bar_texttemplate, bar_label_font,
+                 tick_label_font, tick_template, shared_fontdict, scale, fig, writer,
                  bar_kwargs, fig_kwargs, filter_column_colors):
         self.filename = filename
         self.extension = self.get_extension()
@@ -64,7 +64,7 @@ class _BarChartRace(CommonChart):
                 raise ValueError('`filename` must have an extension')
         elif self.filename is not None:
             raise TypeError('`filename` must be None or a string')
-            
+
         if self.sort not in ('asc', 'desc'):
             raise ValueError('`sort` must be "asc" or "desc"')
 
@@ -151,7 +151,7 @@ class _BarChartRace(CommonChart):
             cols = self.fixed_order
             df = df[cols]
             self.n_bars = min(len(cols), self.n_bars)
-            
+
         compute_ranks = self.fixed_order is False
         dfs = prepare_wide_data(df, self.orientation, self.sort, self.n_bars,
                                 self.interpolate_period, self.steps_per_period, compute_ranks)
@@ -167,12 +167,12 @@ class _BarChartRace(CommonChart):
             if (self.sort == 'desc' and self.orientation == 'h') or \
                 (self.sort == 'asc' and self.orientation == 'v'):
                 rank_row = rank_row[::-1]
-            
+
             ranks_arr = np.repeat(rank_row.reshape(1, -1), m, axis=0)
             df_ranks = pd.DataFrame(data=ranks_arr, columns=cols)
 
         return df_values, df_ranks
-        
+
     def get_col_filt(self):
         col_filt = pd.Series([True] * self.df_values.shape[1])
         if self.n_bars < self.df_ranks.shape[1]:
@@ -188,7 +188,7 @@ class _BarChartRace(CommonChart):
                 self.df_values = self.df_values.loc[:, col_filt]
                 self.df_ranks = self.df_ranks.loc[:, col_filt]
         return col_filt
-        
+
     def get_bar_colors(self, colors):
         if colors is None:
             colors = 'dark12'
@@ -197,7 +197,7 @@ class _BarChartRace(CommonChart):
 
         if isinstance(colors, str):
             from ._colormaps import colormaps
-            
+
             try:
                 bar_colors = colormaps[colors.lower()]
             except KeyError:
@@ -271,16 +271,16 @@ class _BarChartRace(CommonChart):
         plot_func = ax.barh if self.orientation == 'h' else ax.bar
         bar_location, bar_length, cols, _ = self.get_bar_info(-1)
         plot_func(bar_location, bar_length, tick_label=cols)
-                
+
         self.prepare_axes(ax)
         texts = self.add_bar_labels(ax, bar_location, bar_length)
 
         fig.canvas.print_figure(io.BytesIO(), format='png')
-        xmin = min(label.get_window_extent().x0 for label in ax.get_yticklabels()) 
+        xmin = min(label.get_window_extent().x0 for label in ax.get_yticklabels())
         xmin /= (fig.dpi * fig.get_figwidth())
         left = ax.get_position().x0 - xmin + .01
 
-        ymin = min(label.get_window_extent().y0 for label in ax.get_xticklabels()) 
+        ymin = min(label.get_window_extent().y0 for label in ax.get_xticklabels())
         ymin /= (fig.dpi * fig.get_figheight())
         bottom = ax.get_position().y0 - ymin + .01
 
@@ -298,7 +298,7 @@ class _BarChartRace(CommonChart):
             else:
                 max_bar_pixels = ax.transData.transform((0, max_bar))[1]
                 max_text = max(text.get_window_extent().y1 for text in texts)
-            
+
             self.extra_pixels = max_text - max_bar_pixels + 10
 
             if self.fixed_max:
@@ -348,7 +348,7 @@ class _BarChartRace(CommonChart):
     def plot_bars(self, ax, i):
         bar_location, bar_length, cols, colors = self.get_bar_info(i)
         if self.orientation == 'h':
-            ax.barh(bar_location, bar_length, tick_label=cols, 
+            ax.barh(bar_location, bar_length, tick_label=cols,
                     color=colors, **self.bar_kwargs)
             ax.set_yticklabels(ax.get_yticklabels(), **self.tick_label_font)
             if not self.fixed_max and self.bar_textposition == 'outside':
@@ -357,7 +357,7 @@ class _BarChartRace(CommonChart):
                 new_xmax = ax.transData.inverted().transform((new_max_pixels, 0))[0]
                 ax.set_xlim(ax.get_xlim()[0], new_xmax)
         else:
-            ax.bar(bar_location, bar_length, tick_label=cols, 
+            ax.bar(bar_location, bar_length, tick_label=cols,
                    color=colors, **self.bar_kwargs)
             ax.set_xticklabels(ax.get_xticklabels(), **self.tick_label_font)
             if not self.fixed_max and self.bar_textposition == 'outside':
@@ -450,7 +450,7 @@ class _BarChartRace(CommonChart):
                     line.set_xdata([val] * 2)
                 else:
                     line.set_ydata([val] * 2)
-            
+
     def anim_func(self, i):
         if i is None:
             return
@@ -461,7 +461,7 @@ class _BarChartRace(CommonChart):
         for text in ax.texts[start:]:
             text.remove()
         self.plot_bars(ax, i)
-        
+
     def make_animation(self):
         def init_func():
             ax = self.fig.axes[0]
@@ -478,7 +478,7 @@ class _BarChartRace(CommonChart):
                     for _ in range(pause):
                         frames.append(None)
             return frames
-        
+
         frames = frame_generator(len(self.df_values))
         anim = FuncAnimation(self.fig, self.anim_func, frames, init_func, interval=interval)
 
@@ -498,8 +498,8 @@ class _BarChartRace(CommonChart):
                 fc = self.fig.get_facecolor()
                 if fc == (1, 1, 1, 0):
                     fc = 'white'
-                ret_val = anim.save(self.filename, fps=self.fps, writer=self.writer, 
-                                    savefig_kwargs=savefig_kwargs) 
+                ret_val = anim.save(self.filename, fps=self.fps, writer=self.writer,
+                                    savefig_kwargs=savefig_kwargs)
         except Exception as e:
             message = str(e)
             raise Exception(message)
@@ -509,23 +509,23 @@ class _BarChartRace(CommonChart):
         return ret_val
 
 
-def bar_chart_race(df, filename=None, orientation='h', sort='desc', n_bars=None, 
-                   fixed_order=False, fixed_max=False, steps_per_period=10, 
-                   period_length=500, end_period_pause=0, interpolate_period=False, 
+def bar_chart_race(df, filename=None, orientation='h', sort='desc', n_bars=None,
+                   fixed_order=False, fixed_max=False, steps_per_period=10,
+                   period_length=500, end_period_pause=0, interpolate_period=False,
                    period_label=True, period_template=None, period_summary_func=None,
                    perpendicular_bar_func=None, colors=None, title=None, bar_size=.95,
                    bar_textposition='outside', bar_texttemplate='{x:,.0f}',
                    bar_label_font=None, tick_label_font=None, tick_template='{x:,.0f}',
-                   shared_fontdict=None, scale='linear', fig=None, writer=None, 
+                   shared_fontdict=None, scale='linear', fig=None, writer=None,
                    bar_kwargs=None,  fig_kwargs=None, filter_column_colors=False):
     '''
-    Create an animated bar chart race using matplotlib. Data must be in 
-    'wide' format where each row represents a single time period and each 
-    column represents a distinct category. Optionally, the index can label 
-    the time period. Bar length and location change linearly from one 
+    Create an animated bar chart race using matplotlib. Data must be in
+    'wide' format where each row represents a single time period and each
+    column represents a distinct category. Optionally, the index can label
+    the time period. Bar length and location change linearly from one
     time period to the next.
 
-    If no `filename` is given, an HTML string is returned, otherwise the 
+    If no `filename` is given, an HTML string is returned, otherwise the
     animation is saved to disk.
 
     You must have ffmpeg installed on your machine to save videos to disk
@@ -535,58 +535,58 @@ def bar_chart_race(df, filename=None, orientation='h', sort='desc', n_bars=None,
     Parameters
     ----------
     df : pandas DataFrame
-        Must be a 'wide' DataFrame where each row represents a single period 
-        of time. Each column contains the values of the bars for that 
+        Must be a 'wide' DataFrame where each row represents a single period
+        of time. Each column contains the values of the bars for that
         category. Optionally, use the index to label each time period.
         The index can be of any type.
 
     filename : `None` or str, default None
-        If `None` return animation as an HTML5 string. If a string, save 
-        animation to that filename location. Use .mp4, .gif, .html, .mpeg, 
+        If `None` return animation as an HTML5 string. If a string, save
+        animation to that filename location. Use .mp4, .gif, .html, .mpeg,
         .mov or any other extensions supported by ffmpeg or ImageMagick.
 
     orientation : 'h' or 'v', default 'h'
         Bar orientation - horizontal or vertical
 
     sort : 'desc' or 'asc', default 'desc'
-        Sorts the bars. Use 'desc' to place largest bars on top/left 
+        Sorts the bars. Use 'desc' to place largest bars on top/left
         and 'asc' to place largest bars on bottom/right.
 
     n_bars : int, default None
-        Choose the maximum number of bars to display on the graph. 
-        By default, use all bars. New bars entering the race will appear 
+        Choose the maximum number of bars to display on the graph.
+        By default, use all bars. New bars entering the race will appear
         from the edge of the axes.
 
     fixed_order : bool or list, default False
-        When `False`, bar order changes every time period to correspond 
-        with `sort`. When `True`, bars remained fixed according to their 
-        final value corresponding with `sort`. Otherwise, provide a list 
+        When `False`, bar order changes every time period to correspond
+        with `sort`. When `True`, bars remained fixed according to their
+        final value corresponding with `sort`. Otherwise, provide a list
         of the exact order of the categories for the entire duration.
 
     fixed_max : bool, default False
         Whether to fix the maximum value of the axis containing the values.
         When `False`, the axis for the values will have its maximum (xlim/ylim)
-        just after the largest bar of the current time period. 
+        just after the largest bar of the current time period.
         The axis maximum will change along with the data.
 
-        When True, the maximum axis value will remain constant for the 
-        duration of the animation. For example, in a horizontal bar chart, 
-        if the largest bar has a value of 100 for the first time period and 
-        10,000 for the last time period. The xlim maximum will be 10,000 
+        When True, the maximum axis value will remain constant for the
+        duration of the animation. For example, in a horizontal bar chart,
+        if the largest bar has a value of 100 for the first time period and
+        10,000 for the last time period. The xlim maximum will be 10,000
         for each frame.
 
     steps_per_period : int, default 10
-        The number of steps to go from one time period to the next. 
-        The bars will grow linearly between each period. 
+        The number of steps to go from one time period to the next.
+        The bars will grow linearly between each period.
         Increasing this number creates smoother animations.
 
     period_length : int, default 500
-        Number of milliseconds to animate each period (row). 
+        Number of milliseconds to animate each period (row).
         Default is 500ms (half of a second).
 
     end_period_pause : int, default 0
         Number of milliseconds to pause the animation at the end of
-        each period. This number must be greater than or equal to 
+        each period. This number must be greater than or equal to
         period_length / steps_per_period or there will be no pause.
         This is due to all frames having the same time interval.
 
@@ -594,13 +594,13 @@ def bar_chart_race(df, filename=None, orientation='h', sort='desc', n_bars=None,
         therefore end_period_pause must be at least 50 for there
         to be a pause. The pause will be in increments of this
         calculated interval and not exact. For example, setting the
-        end_period_pause to 725 will produce a pause of 700 
+        end_period_pause to 725 will produce a pause of 700
         milliseconds when using the defaults.
 
     interpolate_period : bool, default `False`
         Whether to interpolate the period. Only valid for datetime or
-        numeric indexes. When set to `True`, for example, 
-        the two consecutive periods 2020-03-29 and 2020-03-30 with 
+        numeric indexes. When set to `True`, for example,
+        the two consecutive periods 2020-03-29 and 2020-03-30 with
         `steps_per_period` set to 4 would yield a new index of
         2020-03-29 00:00:00
         2020-03-29 06:00:00
@@ -613,7 +613,7 @@ def bar_chart_race(df, filename=None, orientation='h', sort='desc', n_bars=None,
         on the axes whose value changes each frame. If `False`,
         don't place label on axes.
 
-        Use a dictionary to supply any valid parameters of the 
+        Use a dictionary to supply any valid parameters of the
         matplotlib `text` method.
         Example:
         {
@@ -624,7 +624,7 @@ def bar_chart_race(df, filename=None, orientation='h', sort='desc', n_bars=None,
             'size': 8
         }
 
-        The default location depends on `orientation` and `sort`; 
+        The default location depends on `orientation` and `sort`;
         x and y are in axes units
         * h, desc -> x=.95, y=.15, ha='right', va='center'
         * h, asc -> x=.95, y=.85, ha='right', va='center'
@@ -632,27 +632,27 @@ def bar_chart_race(df, filename=None, orientation='h', sort='desc', n_bars=None,
         * v, asc -> x=.05, y=.85, ha='left', va='center'
 
     period_template : str, default `None`
-        Either a string with date directives or a new-style (Python 3.6+) 
-        formatted string. Date directives will only be used for 
+        Either a string with date directives or a new-style (Python 3.6+)
+        formatted string. Date directives will only be used for
         datetime indexes.
 
         Date directive reference:
         https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes
-        
+
         Example of string with date directives
             '%B %d, %Y'
         Changes 2020/03/29 to March 29, 2020
-        
-        For new-style formatted string. Use curly braces and the variable `x`, 
-        which will be passed the current period's index value. 
+
+        For new-style formatted string. Use curly braces and the variable `x`,
+        which will be passed the current period's index value.
         Example:
             'Period {x:10.2f}'
 
     period_summary_func : function, default None
         Custom text added to the axes each period.
-        Create a user-defined function that accepts one pandas Series of the 
-        current time period's values. It must return a dictionary containing 
-        the keys "x", "y", and "s" which will be passed to the matplotlib 
+        Create a user-defined function that accepts one pandas Series of the
+        current time period's values. It must return a dictionary containing
+        the keys "x", "y", and "s" which will be passed to the matplotlib
         `text` method.
         Example:
         def func(values, ranks):
@@ -661,10 +661,10 @@ def bar_chart_race(df, filename=None, orientation='h', sort='desc', n_bars=None,
             return {'x': .85, 'y': .2, 's': s, 'ha': 'right', 'size': 11}
 
     perpendicular_bar_func : function or str, default None
-        Creates a single bar perpendicular to the main bars that spans the 
-        length of the axis. Use either a string that the DataFrame `agg` 
+        Creates a single bar perpendicular to the main bars that spans the
+        length of the axis. Use either a string that the DataFrame `agg`
         method understands or a user-defined function.
-            
+
         DataFrame strings - 'mean', 'median', 'max', 'min', etc..
 
         The function is passed two pandas Series of the current time period's
@@ -674,18 +674,18 @@ def bar_chart_race(df, filename=None, orientation='h', sort='desc', n_bars=None,
             return values.quantile(.75)
 
     colors : str, matplotlib colormap instance, or list of colors, default 'dark12'
-        Colors to be used for the bars. All matplotlib and plotly 
-        colormaps are available by string name. Colors will repeat 
+        Colors to be used for the bars. All matplotlib and plotly
+        colormaps are available by string name. Colors will repeat
         if there are more bars than colors.
 
-        'dark12' is a discrete colormap. If there are more than 12 columns, 
+        'dark12' is a discrete colormap. If there are more than 12 columns,
         then the default colormap will be 'dark24'
 
         Append "_r" to the colormap name to use the reverse of the colormap.
         i.e. "dark12_r"
 
     title : str or dict, default None
-        Title of plot as a string. Use a dictionary to supply several title 
+        Title of plot as a string. Use a dictionary to supply several title
         parameters. You must use the key 'label' for the title.
         Example:
         {
@@ -697,15 +697,15 @@ def bar_chart_race(df, filename=None, orientation='h', sort='desc', n_bars=None,
         }
 
     bar_size : float, default .95
-        Height/width of bars for horizontal/vertical bar charts. 
+        Height/width of bars for horizontal/vertical bar charts.
         Use a number between 0 and 1
-        Represents the fraction of space that each bar takes up. 
+        Represents the fraction of space that each bar takes up.
         When equal to 1, no gap remains between the bars.
 
     bar_textposition : 'outside', 'inside', or None - default 'outside'
-        Position where bar label will be placed. Use None when 
+        Position where bar label will be placed. Use None when
         no label is desired.
-    
+
     bar_texttemplate : str or function, default '{x:,.0f}'
         A new-style formatted string to control the formatting
         of the bar labels. Use `x` as the variable name.
@@ -732,9 +732,9 @@ def bar_chart_race(df, filename=None, orientation='h', sort='desc', n_bars=None,
         Use a dictionary to supply several font properties.
 
     tick_template : str or function, default '{x:,.0f}'
-        Formats the ticks on the axis with numeric values 
+        Formats the ticks on the axis with numeric values
         (x-axis when horizontal and y-axis when vertical). If given a string,
-        pass it to the ticker.StrMethodFormatter matplotlib function. 
+        pass it to the ticker.StrMethodFormatter matplotlib function.
         Use 'x' as the variable
         Example: '{x:10.2f}'
 
@@ -743,8 +743,8 @@ def bar_chart_race(df, filename=None, orientation='h', sort='desc', n_bars=None,
         a string.
 
     shared_fontdict : dict, default None
-        Dictionary of font properties shared across the tick labels, 
-        bar labels, period labels, and title. The only property not shared 
+        Dictionary of font properties shared across the tick labels,
+        bar labels, period labels, and title. The only property not shared
         is `size`. It will be ignored if you try to set it.
         Possible keys are:
             'family', 'weight', 'color', 'style', 'stretch', 'weight', 'variant'
@@ -765,15 +765,15 @@ def bar_chart_race(df, filename=None, orientation='h', sort='desc', n_bars=None,
         This argument is passed to the matplotlib FuncAnimation.save method.
 
         By default, the writer will be 'ffmpeg' unless creating a gif,
-        then it will be 'imagemagick', or an html file, then it 
-        will be 'html'. 
-            
+        then it will be 'imagemagick', or an html file, then it
+        will be 'html'.
+
         Find all of the availabe Writers:
         >>> from matplotlib import animation
         >>> animation.writers.list()
 
     bar_kwargs : dict, default None
-        Other keyword arguments (within a dictionary) forwarded to the 
+        Other keyword arguments (within a dictionary) forwarded to the
         matplotlib `barh`/`bar` function. If no value for 'alpha' is given,
         then it is set to .8 by default.
         Some examples:
@@ -783,7 +783,7 @@ def bar_chart_race(df, filename=None, orientation='h', sort='desc', n_bars=None,
 
     fig_kwargs : dict, default None
         A dictionary of keyword arguments passed to the matplotlib
-        Figure constructor. If not given, figsize is set to (6, 3.5) and 
+        Figure constructor. If not given, figsize is set to (6, 3.5) and
         dpi to 144.
         Example:
         {
@@ -793,23 +793,23 @@ def bar_chart_race(df, filename=None, orientation='h', sort='desc', n_bars=None,
         }
 
     filter_column_colors : bool, default `False`
-        When setting n_bars, it's possible that some columns never 
+        When setting n_bars, it's possible that some columns never
         appear in the animation. Regardless, all columns get assigned
-        a color by default. 
-        
-        For instance, suppose you have 100 columns 
-        in your DataFrame, set n_bars to 10, and 15 different columns 
-        make at least one appearance in the animation. Even if your 
-        colormap has at least 15 colors, it's possible that many 
+        a color by default.
+
+        For instance, suppose you have 100 columns
+        in your DataFrame, set n_bars to 10, and 15 different columns
+        make at least one appearance in the animation. Even if your
+        colormap has at least 15 colors, it's possible that many
         bars will be the same color, since each of the 100 columns is
         assigned of the colormaps colors.
 
-        Setting this to `True` will map your colormap to just those 
+        Setting this to `True` will map your colormap to just those
         columns that make an appearance in the animation, helping
         avoid duplication of colors.
 
         Setting this to `True` will also have the (possibly unintended)
-        consequence of changing the colors of each color every time a 
+        consequence of changing the colors of each color every time a
         new integer for n_bars is used.
 
         EXPERIMENTAL
@@ -823,54 +823,75 @@ def bar_chart_race(df, filename=None, orientation='h', sort='desc', n_bars=None,
 
     Examples
     --------
-    Use the `load_data` function to get an example dataset to 
+    Use the `load_data` function to get an example dataset to
     create an animation.
 
     df = bcr.load_dataset('covid19')
     bcr.bar_chart_race(
-        df=df, 
-        filename='../docs/images/covid19_horiz.gif', 
-        orientation='h', 
-        sort='desc', 
-        n_bars=8, 
-        fixed_order=False, 
-        fixed_max=True, 
-        steps_per_period=20, 
-        period_length=500, 
+        df=df,
+        filename='../docs/images/covid19_horiz.gif',
+        orientation='h',
+        sort='desc',
+        n_bars=8,
+        fixed_order=False,
+        fixed_max=True,
+        steps_per_period=20,
+        period_length=500,
         end_period_pause=0,
-        interpolate_period=False, 
-        period_label={'x': .98, 'y': .3, 'ha': 'right', 'va': 'center'}, 
-        period_template='%B %d, %Y', 
-        period_summary_func=lambda v, r: {'x': .98, 'y': .2, 
-                                          's': f'Total deaths: {v.sum():,.0f}', 
-                                          'ha': 'right', 'size': 11}, 
-        perpendicular_bar_func='median', 
-        colors='dark12', 
-        title='COVID-19 Deaths by Country', 
-        bar_size=.95, 
+        interpolate_period=False,
+        period_label={'x': .98, 'y': .3, 'ha': 'right', 'va': 'center'},
+        period_template='%B %d, %Y',
+        period_summary_func=lambda v, r: {'x': .98, 'y': .2,
+                                          's': f'Total deaths: {v.sum():,.0f}',
+                                          'ha': 'right', 'size': 11},
+        perpendicular_bar_func='median',
+        colors='dark12',
+        title='COVID-19 Deaths by Country',
+        bar_size=.95,
         bar_textposition='inside',
-        bar_texttemplate='{x:,.0f}', 
-        bar_label_font=7, 
-        tick_label_font=7, 
+        bar_texttemplate='{x:,.0f}',
+        bar_label_font=7,
+        tick_label_font=7,
         tick_template='{x:,.0f}',
-        shared_fontdict=None, 
-        scale='linear', 
-        fig=None, 
-        writer=None, 
+        shared_fontdict=None,
+        scale='linear',
+        fig=None,
+        writer=None,
         bar_kwargs={'alpha': .7},
         fig_kwargs={'figsize': (6, 3.5), 'dpi': 144},
         filter_column_colors=False)
 
     Font Help
     ---------
-    Font size can also be a string - 'xx-small', 'x-small', 'small',  
+    Font size can also be a string - 'xx-small', 'x-small', 'small',
         'medium', 'large', 'x-large', 'xx-large', 'smaller', 'larger'
     These sizes are relative to plt.rcParams['font.size'].
     '''
     bcr = _BarChartRace(df, filename, orientation, sort, n_bars, fixed_order, fixed_max,
-                        steps_per_period, period_length, end_period_pause, interpolate_period, 
+                        steps_per_period, period_length, end_period_pause, interpolate_period,
                         period_label, period_template, period_summary_func, perpendicular_bar_func,
-                        colors, title, bar_size, bar_textposition, bar_texttemplate, 
-                        bar_label_font, tick_label_font, tick_template, shared_fontdict, scale, 
+                        colors, title, bar_size, bar_textposition, bar_texttemplate,
+                        bar_label_font, tick_label_font, tick_template, shared_fontdict, scale,
                         fig, writer, bar_kwargs, fig_kwargs, filter_column_colors)
     return bcr.make_animation()
+
+
+def get_bcr(df, filename=None, orientation='h', sort='desc', n_bars=None,
+                   fixed_order=False, fixed_max=False, steps_per_period=10,
+                   period_length=500, end_period_pause=0, interpolate_period=False,
+                   period_label=True, period_template=None, period_summary_func=None,
+                   perpendicular_bar_func=None, colors=None, title=None, bar_size=.95,
+                   bar_textposition='outside', bar_texttemplate='{x:,.0f}',
+                   bar_label_font=None, tick_label_font=None, tick_template='{x:,.0f}',
+                   shared_fontdict=None, scale='linear', fig=None, writer=None,
+                   bar_kwargs=None,  fig_kwargs=None, filter_column_colors=False):
+    """
+    Get class object
+    """
+    bcr = _BarChartRace(df, filename, orientation, sort, n_bars, fixed_order, fixed_max,
+                        steps_per_period, period_length, end_period_pause, interpolate_period,
+                        period_label, period_template, period_summary_func, perpendicular_bar_func,
+                        colors, title, bar_size, bar_textposition, bar_texttemplate,
+                        bar_label_font, tick_label_font, tick_template, shared_fontdict, scale,
+                        fig, writer, bar_kwargs, fig_kwargs, filter_column_colors)
+    return bcr
