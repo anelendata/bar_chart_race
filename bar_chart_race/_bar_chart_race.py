@@ -13,12 +13,15 @@ from ._utils import prepare_wide_data
 
 class _BarChartRace(CommonChart):
 
-    def __init__(self, df, filename, orientation, sort, n_bars, fixed_order, fixed_max,
+    def __init__(self, df, filename, orientation, sort, n_bars, fixed_order,
+                 fixed_max, fixed_min, fixed_max_value, fixed_min_value,
                  steps_per_period, period_length, end_period_pause, interpolate_period,
                  period_label, period_template, period_summary_func, perpendicular_bar_func,
                  colors, title, bar_size, bar_textposition, bar_texttemplate, bar_label_font,
                  tick_label_font, tick_template, shared_fontdict, scale, fig, writer,
                  bar_kwargs, fig_kwargs, filter_column_colors, image_files):
+        self.fixed_min_value = fixed_min_value
+        self.fixed_max_value = fixed_max_value
         self.filename = filename
         self.extension = self.get_extension()
         self.orientation = orientation
@@ -26,6 +29,7 @@ class _BarChartRace(CommonChart):
         self.n_bars = n_bars or df.shape[1]
         self.fixed_order = fixed_order
         self.fixed_max = fixed_max
+        self.fixed_min = fixed_min
         self.steps_per_period = steps_per_period
         self.period_length = period_length
         self.end_period_pause = end_period_pause
@@ -60,6 +64,7 @@ class _BarChartRace(CommonChart):
         self.fig = self.get_fig(fig)
 
         self.image_files = image_files
+
 
     def validate_params(self):
         if isinstance(self.filename, str):
@@ -287,11 +292,16 @@ class _BarChartRace(CommonChart):
         ymin /= (fig.dpi * fig.get_figheight())
         bottom = ax.get_position().y0 - ymin + .01
 
-        if self.fixed_max:
+        if self.fixed_max and not self.fixed_max_value:
             if self.orientation == 'h':
                 self.fixed_max_value = ax.get_xlim()[1]
             else:
                 self.fixed_max_value = ax.get_ylim()[1]
+        if self.fixed_min and not self.fixed_min_value:
+            if self.orientation == 'h':
+                self.fixed_min_value = ax.get_xlim()[0]
+            else:
+                self.fixed_min_value = ax.get_ylim()[0]
 
         if self.bar_textposition == 'outside':
             max_bar = max(bar_length)
@@ -321,9 +331,9 @@ class _BarChartRace(CommonChart):
 
         if self.fixed_max:
             if self.orientation == 'h':
-                ax.set_xlim(None, self.fixed_max_value)
+                ax.set_xlim(self.fixed_min_value, self.fixed_max_value)
             else:
-                ax.set_ylim(None, self.fixed_max_value)
+                ax.set_ylim(self.fixed_min_value, self.fixed_max_value)
 
     def create_figure(self):
         fig = plt.Figure(**self.fig_kwargs)
@@ -360,34 +370,48 @@ class _BarChartRace(CommonChart):
         if self.orientation == 'h':
             ax.barh(bar_location, bar_length, tick_label=cols,
                     color=colors, **self.bar_kwargs)
-
-        if self.image_files:
-            for i, (x, y, label) in enumerate(zip(bar_length, bar_location, list(cols))):
-                size = self.images[label].shape
-                zoom = 0.25 * self.bar_size * (self.fig.dpi * self.fig.get_figheight()) / self.n_bars / size[1]
-                im = OffsetImage(self.images[label], zoom=zoom)
-                x_offset = -25
-                if self.annotation_box.get(label):
-                    self.annotation_box[label].remove()
-                self.annotation_box[label] = AnnotationBbox(im, (x, y), xybox=(x_offset, 0), frameon=False,
-                        xycoords='data', boxcoords="offset points", pad=0)
-                ax.add_artist(self.annotation_box[label])
-
             ax.set_yticklabels(ax.get_yticklabels(), **self.tick_label_font)
+
+            if self.image_files:
+                for j, (x, y, label) in enumerate(zip(bar_length, bar_location, list(cols))):
+                    size = self.images[label].shape
+                    zoom = 0.25 * self.bar_size * (self.fig.dpi * self.fig.get_figheight()) / self.n_bars / size[1]
+                    im = OffsetImage(self.images[label], zoom=zoom)
+                    x_offset = -25
+                    if self.annotation_box.get(label):
+                        self.annotation_box[label].remove()
+                    self.annotation_box[label] = AnnotationBbox(im, (x, y), xybox=(x_offset, 0), frameon=False,
+                            xycoords='data', boxcoords="offset points", pad=0)
+                    ax.add_artist(self.annotation_box[label])
+
             if not self.fixed_max and self.bar_textposition == 'outside':
                 max_bar = bar_length.max()
                 new_max_pixels = ax.transData.transform((max_bar, 0))[0] + self.extra_pixels
                 new_xmax = ax.transData.inverted().transform((new_max_pixels, 0))[0]
                 ax.set_xlim(ax.get_xlim()[0], new_xmax)
+
+            if not self.fixed_min:
+                min_bar = bar_length.min()
+                new_min_pixels = ax.transData.transform((min_bar, 0))[0] - self.extra_pixels
+                new_xmin = ax.transData.inverted().transform((new_min_pixels, 0))[0]
+                ax.set_xlim(new_xmin, ax.get_xlim()[1])
+
         else:
             ax.bar(bar_location, bar_length, tick_label=cols,
                    color=colors, **self.bar_kwargs)
             ax.set_xticklabels(ax.get_xticklabels(), **self.tick_label_font)
+
             if not self.fixed_max and self.bar_textposition == 'outside':
                 max_bar = bar_length.max()
                 new_max_pixels = ax.transData.transform((0, max_bar))[1] + self.extra_pixels
                 new_ymax = ax.transData.inverted().transform((0, new_max_pixels))[1]
                 ax.set_ylim(ax.get_ylim()[0], new_ymax)
+
+            if not self.fixed_min:
+                min_bar = bar_length.min()
+                new_min_pixels = ax.transData.transform((0, min_bar))[1] - self.extra_pixels
+                new_ymin = ax.transData.inverted().transform((0, new_min_pixels))[1]
+                ax.set_xlim(new_ymin, ax.get_ylim()[1])
 
         self.set_major_formatter(ax)
         self.add_period_label(ax, i)
@@ -539,7 +563,8 @@ class _BarChartRace(CommonChart):
 
 
 def bar_chart_race(df, filename=None, orientation='h', sort='desc', n_bars=None,
-                   fixed_order=False, fixed_max=False, steps_per_period=10,
+                   fixed_order=False, fixed_max=False, fixed_min=False,
+                   fixed_max_value=None, fixed_min_value=None,
                    period_length=500, end_period_pause=0, interpolate_period=False,
                    period_label=True, period_template=None, period_summary_func=None,
                    perpendicular_bar_func=None, colors=None, title=None, bar_size=.95,
@@ -604,6 +629,14 @@ def bar_chart_race(df, filename=None, orientation='h', sort='desc', n_bars=None,
         if the largest bar has a value of 100 for the first time period and
         10,000 for the last time period. The xlim maximum will be 10,000
         for each frame.
+
+    fixed_min: bool, default False
+        Same as fixed_max
+
+    fixed_max_value: float, default None
+        If None and fixed_max is True, the value is derived.
+
+    fixed_min_value: float, default None
 
     steps_per_period : int, default 10
         The number of steps to go from one time period to the next.
@@ -902,6 +935,7 @@ def bar_chart_race(df, filename=None, orientation='h', sort='desc', n_bars=None,
     These sizes are relative to plt.rcParams['font.size'].
     '''
     bcr = _BarChartRace(df, filename, orientation, sort, n_bars, fixed_order, fixed_max,
+                        fixed_max_value, fixed_min_value,
                         steps_per_period, period_length, end_period_pause, interpolate_period,
                         period_label, period_template, period_summary_func, perpendicular_bar_func,
                         colors, title, bar_size, bar_textposition, bar_texttemplate,
@@ -912,19 +946,22 @@ def bar_chart_race(df, filename=None, orientation='h', sort='desc', n_bars=None,
 
 
 def get_bcr(df, filename=None, orientation='h', sort='desc', n_bars=None,
-                   fixed_order=False, fixed_max=False, steps_per_period=10,
-                   period_length=500, end_period_pause=0, interpolate_period=False,
-                   period_label=True, period_template=None, period_summary_func=None,
-                   perpendicular_bar_func=None, colors=None, title=None, bar_size=.95,
-                   bar_textposition='outside', bar_texttemplate='{x:,.0f}',
-                   bar_label_font=None, tick_label_font=None, tick_template='{x:,.0f}',
-                   shared_fontdict=None, scale='linear', fig=None, writer=None,
-                   bar_kwargs=None,  fig_kwargs=None, filter_column_colors=False,
-                   image_files=None):
+            fixed_order=False, fixed_max=False, fixed_min=False,
+            fixed_max_value=None, fixed_min_value=None,
+            steps_per_period=10,
+            period_length=500, end_period_pause=0, interpolate_period=False,
+            period_label=True, period_template=None, period_summary_func=None,
+            perpendicular_bar_func=None, colors=None, title=None, bar_size=.95,
+            bar_textposition='outside', bar_texttemplate='{x:,.0f}',
+            bar_label_font=None, tick_label_font=None, tick_template='{x:,.0f}',
+            shared_fontdict=None, scale='linear', fig=None, writer=None,
+            bar_kwargs=None,  fig_kwargs=None, filter_column_colors=False,
+            image_files=None):
     """
     Get class object
     """
-    bcr = _BarChartRace(df, filename, orientation, sort, n_bars, fixed_order, fixed_max,
+    bcr = _BarChartRace(df, filename, orientation, sort, n_bars, fixed_order,
+                        fixed_max, fixed_min, fixed_max_value, fixed_min_value,
                         steps_per_period, period_length, end_period_pause, interpolate_period,
                         period_label, period_template, period_summary_func, perpendicular_bar_func,
                         colors, title, bar_size, bar_textposition, bar_texttemplate,
