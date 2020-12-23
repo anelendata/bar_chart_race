@@ -509,7 +509,7 @@ class _BarChartRace(CommonChart):
             text.remove()
         self.plot_bars(ax, i)
 
-    def make_animation(self):
+    def make_animation(self, blit=False):
         def init_func():
             ax = self.fig.axes[0]
             self.plot_bars(ax, 0)
@@ -533,7 +533,7 @@ class _BarChartRace(CommonChart):
             self.prepare_images()
         self.annotation_box = {}
 
-        anim = FuncAnimation(self.fig, self.anim_func, frames, init_func, interval=interval)
+        anim = FuncAnimation(self.fig, self.anim_func, frames, init_func, interval=interval, blit=blit)
 
         try:
             fc = self.fig.get_facecolor()
